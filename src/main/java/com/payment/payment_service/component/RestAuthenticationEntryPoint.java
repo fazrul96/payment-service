@@ -16,8 +16,8 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
-
     private final ObjectMapper objectMapper;
+    private final AuthenticationErrorResolver errorResolver;
 
     @Override
     public void commence(
@@ -25,20 +25,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException exception
     ) throws IOException {
-
-        ApiResponseDto<Void> body = ApiResponseDto.unauthorized(resolveMessage(exception));
+        ApiResponseDto<Void> body = ApiResponseDto.unauthorized(errorResolver.resolve(exception));
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(), body);
-    }
-
-    private String resolveMessage(AuthenticationException ex) {
-        Throwable cause = ex.getCause();
-
-        if (cause instanceof JwtValidationException) {
-            return "JWT token expired or invalid";
-        }
-        return "Unauthorized";
     }
 }
